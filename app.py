@@ -7,9 +7,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import app_data
 import base64
-import datetime
+from datetime import datetime
 import dash_daq as daq
 import io
+import git
+
 covid = app_data.getCovidCountry()
 countryList= covid.country.drop_duplicates()
 indiceList=pd.read_csv('assets/worldIndices.csv')
@@ -115,6 +117,7 @@ portTable=dcc.Graph(id='portTable',figure=app_data.portTable(port))
 
 portfolio=html.Div([
     dbc.Label([html.I(className='fa fa-pie-chart')," My Portfolio"], color='white'), 
+    dbc.FormText(className='mt-0', id='portfolioUpdate'),
     subGraph,
     portIndicator,
     portTable,
@@ -155,7 +158,13 @@ body = dbc.Container(
 
 
 app.layout = html.Div(
-    [title,body], 
+    [title,
+    body,
+    dcc.Interval(
+        id='interval-component',
+        interval=6*1000, # in milliseconds
+        n_intervals=0
+   )], 
     style={'backgroundColor': '#1B1C1D', 'color': '#7f7f7f',})
 
 @app.callback(
@@ -166,18 +175,25 @@ app.layout = html.Div(
     Input(component_id='indexSelect', component_property='value')]
 )
 def updateGraph(country, index):
+    g=git.cmd.Git('assets/COVID-19/')
+    print(g.pull())
     return [app_data.mainGraph(indiceList[index], index, country), app_data.indicator(country)[0], "Last Updated: "+ app_data.indicator(country)[1]]
 
 @app.callback([
     Output('subGraph', 'figure'), 
     Output('portIndicator', 'figure'), 
-    Output('portTable', 'figure')],
-    [Input('upload-data', 'contents')],)
-def update_output(contents):
+    Output('portTable', 'figure'), 
+    Output(component_id='portfolioUpdate', component_property='children')],
+    [Input('upload-data', 'contents'), 
+    Input('interval-component', 'n_intervals')],)
+def update_output(contents, n):
+    if contents is None:
+        return app_data.subGraph(port), app_data.portIndicator(port),app_data.portTable(port), "Last Updated: "+datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    return app_data.subGraph(df), app_data.portIndicator(df),app_data.portTable(df)
+    return app_data.subGraph(df), app_data.portIndicator(df),app_data.portTable(df), "Last Updated: "+datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+
 
 
 @app.callback(Output('rss', 'children'),
@@ -189,7 +205,6 @@ def update_rss(contents):
 
 
 if __name__ == '__main__':
-
     app.run_server(host='0.0.0.0', port='8050')
 
 

@@ -144,12 +144,23 @@ def subGraph(port):
     
     df=getIndices('2018-01-01',datetime.today(),port.Symbol)
     fig = go.Figure()
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)')
-    fig.update_layout(width=500, height=300)
     fig.update_layout({'legend_orientation': 'h'})
     fig.update_layout(legend=dict(x=-.1, y=1.2))
     fig.update_layout(font=dict(size=9, color="#7f7f7f"))
     fig.update_layout(plot_bgcolor='#1B1C1D')
+    fig.update_layout(
+        autosize=False,
+        width=450,
+        height=200,
+        margin=dict(
+            l=0,
+            r=0,
+            b=0,
+            t=0,
+            pad=0
+        ),
+        paper_bgcolor='#1B1C1D',
+    )
     for i in df.Close.columns:
         fig.add_trace(go.Scatter(
             x=df.Date,
@@ -233,7 +244,7 @@ def portTable(port):
     fig.update_layout(
         autosize=False,
         width=500,
-        height=500,
+        height=120,
         margin=dict(
             l=0,
             r=0,
