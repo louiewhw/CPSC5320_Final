@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import app_data
 import base64
 import datetime
+import dash_daq as daq
 import io
 covid = app_data.getCovidCountry()
 countryList= covid.country.drop_duplicates()
@@ -21,8 +22,8 @@ box_shadow = {'box-shadow': '0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.
               'padding': '16px', 'border-radius': '15px','position':'fixed'}
 container_style={'width':'85%', 'backgroundColor': '#1B1C1D', 'padding': '16px', 'padding-top':'70px'}
 rssDict={
-    'r/Coronavirus':'http://www.reddit.com/r/Coronavirus/.rss', 
-    'r/wallstreetbets':'http://www.reddit.com/r/wallstreetbets/.rss', 
+    'r/Coronavirus - reddit':'http://www.reddit.com/r/Coronavirus/.rss', 
+    'r/wallstreetbets - reddit':'http://www.reddit.com/r/wallstreetbets/.rss', 
     'WHO news':'https://www.who.int/rss-feeds/news-english.xml', 
     'bbc news':'http://feeds.bbci.co.uk/news/world/rss.xml', 
     'Reuters':'http://feeds.reuters.com/Reuters/worldNews'
@@ -55,11 +56,19 @@ upload=dcc.Upload(
         style=upload_style
     )
 
-graph=dcc.Graph(id='mainGraph')
+mainGraph=html.Div([
+    dbc.Label([html.I(className='fa fa-dollar')," Major Market Index"], color='white'), 
+    dcc.Graph(id='mainGraph'),
+    ], style={'margin-top':'20px'})
 
 subGraph=dcc.Graph(id='subGraph', figure=app_data.subGraph(port))
 
-indicator=dcc.Graph(id='indicator')
+indicator=html.Div([
+    dbc.Label([html.I(className='fa fa-ambulance')," Coronavirus Update"], color='white'),
+    dbc.FormText(className='mt-0', id='indicatorUpdate'),
+    dcc.Graph(id='indicator'), 
+    ])
+
 
 title=dbc.Container(
     html.H4('The Coronavirus And Stock Market'),
@@ -74,7 +83,7 @@ form = dbc.Row(
         dbc.Col(
             dbc.FormGroup(
                 [
-                    dbc.Label([html.I(className='fa fa-sliders')," Index"], html_for="example-email-grid"),
+                    dbc.Label([html.I(className='fa fa-sliders')," Index"], color='white'),
                     dbc.Select(
                         id='indexSelect',
                         options=[{'label':row[1], 'value':row[0]} for row in indiceList.items()],
@@ -87,7 +96,7 @@ form = dbc.Row(
         dbc.Col(
             dbc.FormGroup(
                 [
-                    dbc.Label([html.I(className='fa fa-globe')," Country"], html_for="example-password-grid"),
+                    dbc.Label([html.I(className='fa fa-globe')," Country"], color='white'),
                     dbc.Select(
                         id='countrySelect',
                         options=[{'label':i, 'value':i} for i in countryList],
@@ -100,16 +109,22 @@ form = dbc.Row(
     ],
     form=True,
 )
+
+portIndicator=dcc.Graph(id='portIndicator', figure=app_data.portIndicator(port))
+portTable=dcc.Graph(id='portTable',figure=app_data.portTable(port))
+
 portfolio=html.Div([
-    dbc.Label([html.I(className='fa fa-pie-chart')," Portfolio"], html_for="example-email-grid"), 
+    dbc.Label([html.I(className='fa fa-pie-chart')," My Portfolio"], color='white'), 
     subGraph,
+    portIndicator,
+    portTable,
     ],
     style={'margin-top':'30px'}
     )
 
 rss_input = dbc.FormGroup(
     [
-        dbc.Label("RSS Feeds"),
+        dbc.Label([html.I(className='fa fa-rss-square'), " RSS Feeds"], color='white'),
         dbc.Select(
             id="rssSelect",
             options=[{"label": i[0], "value": i[1]} for i in rssDict.items()],
@@ -124,12 +139,13 @@ rss_input = dbc.FormGroup(
 reddit=app_data.getRss('http://www.reddit.com/r/Coronavirus/.rss')
 
 rss=html.Div(id='rss')
+ 
 
 body = dbc.Container(
     [
         dbc.Row(
             [
-                dbc.Col([graph, indicator,rss_input,rss],md=8),
+                dbc.Col([mainGraph, indicator,rss_input,rss],md=8),
                 dbc.Col([form,upload, portfolio],md=3, style=box_shadow, width={"offset": 7}),
             ])
     ],
@@ -140,31 +156,35 @@ body = dbc.Container(
 
 app.layout = html.Div(
     [title,body], 
-    style={'backgroundColor': '#1B1C1D', 'color': '#FEFDFD',})
+    style={'backgroundColor': '#1B1C1D', 'color': '#7f7f7f',})
 
 @app.callback(
     [Output(component_id='mainGraph', component_property='figure'), 
-    Output(component_id='indicator', component_property='figure')],
+    Output(component_id='indicator', component_property='figure'), 
+    Output(component_id='indicatorUpdate', component_property='children')],
     [Input(component_id='countrySelect', component_property='value'),
-    Input(component_id='indexSelect', component_property='value') ]
+    Input(component_id='indexSelect', component_property='value')]
 )
 def updateGraph(country, index):
-    return [app_data.mainGraph(indiceList[index], index, country), app_data.indicator(country)]
+    return [app_data.mainGraph(indiceList[index], index, country), app_data.indicator(country)[0], "Last Updated: "+ app_data.indicator(country)[1]]
 
-@app.callback(Output('subGraph', 'figure'),
-              [Input('upload-data', 'contents')],)
+@app.callback([
+    Output('subGraph', 'figure'), 
+    Output('portIndicator', 'figure'), 
+    Output('portTable', 'figure')],
+    [Input('upload-data', 'contents')],)
 def update_output(contents):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
     df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-    return app_data.subGraph(df)
+    return app_data.subGraph(df), app_data.portIndicator(df),app_data.portTable(df)
 
 
 @app.callback(Output('rss', 'children'),
               [Input('rssSelect', 'value')],)
 def update_rss(contents):
     df=app_data.getRss(contents)
-    return [html.P([html.A(row[1][0], href=row[1][1], style={'color': '#FEFDFD'}), ' - ',html.Small(['(',row[1][2].split('+')[0].replace('T', ': '), ')'])]) for row in df.iterrows()]
+    return [html.P([html.A(row[1][0], href=row[1][1], style={'color': '#FEFDFD'}), ' | ',html.Small([row[1][2].split('+')[0].replace('T', ': ')])]) for row in df.iterrows()]
 
 
 

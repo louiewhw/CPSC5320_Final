@@ -65,7 +65,7 @@ def mainGraph(title, ticker, country, start='2020-01-22', end=datetime.today()):
         x=x,
         y=y_lower,
         fill='tonexty',
-        name=country+' confirmed',
+        name=country+' Confirmed Cases',
         fillcolor='rgba(209, 55, 31, 0.3)',
         mode='none'
     ))
@@ -75,10 +75,9 @@ def mainGraph(title, ticker, country, start='2020-01-22', end=datetime.today()):
         y=y,
         mode='lines',
         line_color='#43CE99',
-        name=ticker,
+        name=title + ' (' + ticker+')',
     ))
-    fig.update_layout(title_text=title, 
-                      yaxis_title='Index' )
+    fig.update_layout(yaxis_title='Index' )
 
     fig.update_layout(yaxis=dict(zeroline=False))
     return fig
@@ -96,12 +95,10 @@ def indicator(country):
     df=getRecent(country)
     today, yesterday=df
     fig = go.Figure()
-    fig.update_layout(width=900, height=300)
-    fig.update_layout(paper_bgcolor='#1B1C1D')
-    fig.update_layout(font=dict(size=9, color="#7f7f7f"))
+    fig.update_layout(font=dict(size=9, color="white"))
     fig.add_trace(go.Indicator(
         mode = "number+delta",
-        title = 'Comfirmed',
+        title={"text": "<span style='color:#7f7f7f'>Comfirmed</span>"},
         value = today[2],
         number={'font':{'size':40}},
         domain = {'row': 0, 'column': 0},
@@ -109,24 +106,36 @@ def indicator(country):
 
     fig.add_trace(go.Indicator(
         mode = "number+delta",
-        title = 'Recovered',
+        title={"text": "<span style='color:#7f7f7f'>Recovered</span>"},
         value = today[4],
         number={'font':{'size':40}},
         delta = {'reference': yesterday[4],'font':{'size':20}, 'relative': True, 'increasing':{'color':'#FF4136'}, 'decreasing':{'color':"#3D9970"}},
-        domain = {'row': 0, 'column': 2}))
+        domain = {'row': 0, 'column': 1}))
 
     fig.add_trace(go.Indicator(
         mode = "number+delta",
         value = today[3],
-        title = 'Deaths',
+        title={"text": "<span style='color:#7f7f7f'>Deaths</span>"},
         number={'font':{'size':40}},
         delta = {'reference': yesterday[3],'font':{'size':20}, 'relative': True, 'increasing':{'color':'#FF4136'}, 'decreasing':{'color':"#3D9970"}},
-        domain = {'row': 0, 'column': 4}))
+        domain = {'row': 0, 'column': 2}))
 
     fig.update_layout(
-        grid = {'rows': 1, 'columns': 5, 'pattern': "independent"})
-    fig.update_layout(title_text='Last Updated: '+str(today[1]).split()[0] )
-    return fig
+        grid = {'rows': 1, 'columns': 3, 'pattern': "independent"})
+    fig.update_layout(
+        # autosize=False,
+        # width=900,
+        # height=300,
+        margin=dict(
+            l=0,
+            r=0,
+            b=0,
+            t=0,
+            pad=200
+        ),
+        paper_bgcolor='#1B1C1D',
+    )
+    return fig, str(today[1]).split()[0]
 
 
 def subGraph(port):
@@ -157,3 +166,81 @@ def getRss(link):
         posts.append((post.title, post.link, post.updated))
     df=pd.DataFrame(posts, columns=['title', 'link', 'updated'])
     return df.sort_values(by=['updated'], ascending=False)
+
+
+def getQuote(port):
+    quote=data.get_quote_yahoo(port.Symbol).price
+    quote=quote.rename('currentPrice')
+    port=port.merge(quote.to_frame(),left_on='Symbol', right_index=True)
+    port['Profit']=(port.currentPrice-port.Price)*port.Share
+    port['Total']=port.currentPrice*port.Share
+    return port, datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+
+
+
+def portIndicator(port):
+    quote, time=getQuote(port)
+    fig = go.Figure(go.Indicator(
+        title={"text": "<span style='font-size:15; color:#7f7f7f'>Value</span>"},
+        mode = "number+delta",
+        value = quote.Total.sum(),
+        number = {'prefix': "$"},
+        delta = {'relative': True,'reference': sum(quote.Price*quote.Share)},
+        domain = {'x': [0, 1], 'y': [0, 1]}
+        ))
+    fig.update_layout(font=dict(color="white"))
+    fig.update_layout(
+        autosize=False,
+        width=450,
+        height=200,
+        margin=dict(
+            l=0,
+            r=0,
+            b=0,
+            t=0,
+            pad=0
+        ),
+        paper_bgcolor='#1B1C1D',
+    )
+
+    return fig
+
+def portTable(port):
+    quote, time=getQuote(port)
+    values = [quote.Stock, quote.Share,quote.Price,quote.currentPrice,round(quote.Profit,2)]
+
+    fig = go.Figure(data=[go.Table(
+      columnorder = [1,2,3,4,5],
+      columnwidth = [20,20, 20],
+      header = dict(
+        values = ['Watch List','Shares','Purchase Price', 'Current Price', 'Profit'],
+        align=['left'],
+        fill=dict(color=['#1B1C1D', '#1B1C1D']),
+        font=dict(color=['white', '#7f7f7f', '#7f7f7f'], size=[15, 11, 11]),
+          line_color='#1B1C1D',
+        height=25
+      ),
+      cells=dict(
+        values=values,
+        line_color='black',
+        fill=dict(color=['#1B1C1D', '#1B1C1D']),
+        align=['left', 'left', 'left'],
+        font=dict(color='white', size=12),
+        height=30)
+        )
+    ])
+
+    fig.update_layout(
+        autosize=False,
+        width=500,
+        height=500,
+        margin=dict(
+            l=0,
+            r=0,
+            b=0,
+            t=0,
+            pad=0
+        ),
+        paper_bgcolor='#1B1C1D',
+    )
+    return fig
