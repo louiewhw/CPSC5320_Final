@@ -73,7 +73,7 @@ indicator=html.Div([
 
 
 title=dbc.Container(
-    html.H4('The Coronavirus And Stock Market'),
+    html.H4('Global Markets and the Coronavirus Update'),
     style={'width':'1300px', 'padding':'10px', 'position':'fixed', 'z-index':'1000', 'backgroundColor': '#1B1C1D'},
     fluid=True 
    )
@@ -205,6 +205,6 @@ def update_rss(contents):
 
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port='8050')
+    app.run_server(host='0.0.0.0', port='80')
 
 

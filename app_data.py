@@ -3,6 +3,7 @@ from pandas_datareader import data
 from datetime import datetime
 import plotly.graph_objects as go
 import feedparser as fp
+import plotly.express as ex
 
 def getCovidCountry():
     confirmed = pd.read_csv('assets/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv')
@@ -22,6 +23,7 @@ def getCovidCountry():
     country_recovered.rename(columns={'Country/Region':'country', 'level_1':'Date', 0:'recovered'}, inplace=True)
     df = pd.merge(country_confirmed, country_deaths,on=['country', 'Date'])
     df = pd.merge(df, country_recovered,on=['country', 'Date'])
+    df.Date=pd.to_datetime(df.Date, format='%m/%d/%y')
     return df
 
 def getIndices(start, end, ticker):
@@ -93,14 +95,29 @@ def getRecent(country):
 
 def indicator(country):
     df=getRecent(country)
+
     today, yesterday=df
-    fig = go.Figure()
-    fig.update_layout(font=dict(size=9, color="white"))
+    df1=getCovidCountry()
+    us=df1[(df1.country==country) | (df1.country=='China')]
+    others=df1[(df1.country!=country) & (df1.country!='China')].drop(['country'], axis=1)
+    others=others.groupby(['Date'], as_index=False).sum()
+    others['country']='Others'
+    result=pd.concat([us, others]).reset_index()
+
+    fig=ex.line(result, x="Date", y="confirmed",
+               color="country", hover_name="country", template='simple_white')
+    fig.update_layout(xaxis_showgrid=False, yaxis_showgrid=False)
+
+    fig.update_layout(paper_bgcolor='#1B1C1D')
+    fig.update_layout(paper_bgcolor='#1B1C1D')
+    fig.update_layout(font=dict(size=12, color="#7f7f7f"))
+    fig.update_layout(plot_bgcolor='#1B1C1D')
+    fig.update_layout(yaxis=dict(zeroline=False))
     fig.add_trace(go.Indicator(
         mode = "number+delta",
         title={"text": "<span style='color:#7f7f7f'>Comfirmed</span>"},
         value = today[2],
-        number={'font':{'size':40}},
+        number={'font':{'size':40, 'color':'white'}},
         domain = {'row': 0, 'column': 0},
         delta = {'reference': yesterday[2],'font':{'size':20}, 'relative': True, 'increasing':{'color':'#FF4136'}, 'decreasing':{'color':"#3D9970"}}))
 
@@ -108,7 +125,7 @@ def indicator(country):
         mode = "number+delta",
         title={"text": "<span style='color:#7f7f7f'>Recovered</span>"},
         value = today[4],
-        number={'font':{'size':40}},
+        number={'font':{'size':40, 'color':'white'}},
         delta = {'reference': yesterday[4],'font':{'size':20}, 'relative': True, 'increasing':{'color':'#FF4136'}, 'decreasing':{'color':"#3D9970"}},
         domain = {'row': 0, 'column': 1}))
 
@@ -116,7 +133,7 @@ def indicator(country):
         mode = "number+delta",
         value = today[3],
         title={"text": "<span style='color:#7f7f7f'>Deaths</span>"},
-        number={'font':{'size':40}},
+        number={'font':{'size':40, 'color':'white'}},
         delta = {'reference': yesterday[3],'font':{'size':20}, 'relative': True, 'increasing':{'color':'#FF4136'}, 'decreasing':{'color':"#3D9970"}},
         domain = {'row': 0, 'column': 2}))
 
@@ -131,10 +148,11 @@ def indicator(country):
             r=0,
             b=0,
             t=0,
-            pad=200
         ),
         paper_bgcolor='#1B1C1D',
     )
+
+
     return fig, str(today[1]).split()[0]
 
 
@@ -244,7 +262,7 @@ def portTable(port):
     fig.update_layout(
         autosize=False,
         width=500,
-        height=120,
+        height=200,
         margin=dict(
             l=0,
             r=0,
