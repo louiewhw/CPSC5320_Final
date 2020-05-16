@@ -1,5 +1,5 @@
 # this is an official Python runtime, used as the parent image
-FROM python:3
+FROM python:3.7.2
 
 # set the working directory in the container to /app
 WORKDIR /app
@@ -11,9 +11,8 @@ ADD . /app
 RUN pip install --trusted-host pypi.python.org -r requirements.txt && \
     apt-get install -y git
 
-# unblock port 80 for the Flask app to run on
-EXPOSE 80
+
 
 # execute the Flask app
-CMD ["python", "app.py"]
+CMD ["uwsgi", "covid.ini"]
 
