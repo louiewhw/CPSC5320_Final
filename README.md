@@ -1,2 +1,2 @@
-# CPSC5320_Final
-Final project design
+# Covid_StockMarket Dashboard
+Visualizing Covid data and Stock market 
