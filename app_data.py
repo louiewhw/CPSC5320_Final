@@ -6,9 +6,9 @@ import feedparser as fp
 import plotly.express as ex
 
 def getCovidCountry():
-    confirmed = pd.read_csv('assets/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv')
-    deaths = pd.read_csv('assets/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
-    recovered = pd.read_csv('assets/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv')
+    confirmed = pd.read_csv('assets/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+    deaths = pd.read_csv('assets/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+    recovered = pd.read_csv('assets/COVID-19/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
     country_confirmed = confirmed.drop(['Province/State', 'Lat','Long'], 1).groupby('Country/Region').sum()
     country_deaths = deaths.drop(['Province/State', 'Lat','Long'], 1).groupby('Country/Region').sum()
     country_recovered = recovered.drop(['Province/State', 'Lat','Long'], 1).groupby('Country/Region').sum()
