@@ -49,8 +49,8 @@ external_stylesheets = [{
     'rel': 'stylesheet'},
     dbc.themes.BOOTSTRAP]
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets,routes_pathname_prefix='/covid/')
+server=app.server
 app.title = 'Protfolio'
 
 upload=dcc.Upload(
@@ -208,6 +208,6 @@ def update_rss(contents):
 
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port='8005')
+    app.run_server(host='127.0.0.1', port='8000')
 
 

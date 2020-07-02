@@ -14,5 +14,5 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt && \
 
 
 # execute the Flask app
-CMD ["uwsgi", "covid.ini"]
-
+EXPOSE 8000
+CMD python app.py
