@@ -52,8 +52,8 @@ def mainGraph(title, ticker, country, start='2020-01-22', end=datetime.today()):
     df=stock.merge(covid, on=['Date', 'Date'])
     x=df.Date
     y=df['Close']
-    y_upper=y+df['confirmed']/2
-    y_lower=y-df['confirmed']/2
+    y_upper=y+(df['confirmed']/1000)/2
+    y_lower=y-(df['confirmed']/1000)/2
 
     fig.add_trace(go.Scatter(
         x=x,
@@ -67,7 +67,7 @@ def mainGraph(title, ticker, country, start='2020-01-22', end=datetime.today()):
         x=x,
         y=y_lower,
         fill='tonexty',
-        name=country+' Confirmed Cases',
+        name=country+' Confirmed Cases (in Thousands)',
         fillcolor='rgba(209, 55, 31, 0.3)',
         mode='none'
     ))
